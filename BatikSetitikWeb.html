@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batik Setitik — The Four Guardians of Semarang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QRCode.js for generating real scannable QR codes linked to each animal hash -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        parchment: '#FAF6EE',
+                        cardboard: '#E8DEC8',
+                        kraft: '#D3C1A3',
+                        espresso: '#2C221E',
+                        gold: '#B8860B',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Subtle paper grain & craft border styling */
+        body {
+            background-color: #FAF6EE;
+            color: #2C221E;
+            background-image: radial-gradient(rgba(44, 34, 30, 0.04) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .craft-shadow {
+            box-shadow: 0 8px 24px -4px rgba(44, 34, 30, 0.12), 0 2px 6px -1px rgba(44, 34, 30, 0.06);
+        }
+        .pattern-transition {
+            transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #qr-print-area, #qr-print-area * {
+                visibility: visible;
+            }
+            #qr-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-amber-800 selection:text-white">
+
+    <!-- Top Heritage Header -->
+    <header class="sticky top-0 z-40 bg-[#FAF6EE]/95 backdrop-blur-md border-b-2 border-[#D3C1A3]">
+        <div class="max-w-5xl mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3 text-center sm:text-left">
+                <div class="w-10 h-10 rounded-xl bg-[#2C221E] text-[#FAF6EE] flex items-center justify-center font-serif font-bold text-xl shadow-sm shrink-0">
+                    BS
+                </div>
+                <div>
+                    <div class="flex items-center justify-center sm:justify-start gap-2">
+                        <h1 class="font-serif font-extrabold text-xl sm:text-2xl tracking-tight text-[#2C221E]">BATIK SETITIK</h1>
+                        <span class="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-[#E8DEC8] text-[#2C221E]">Semarang</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-[#5C493E] italic font-serif">“Reimagining Semarang Batik: Meet the Animals, Explore the Story”</p>
+                </div>
+            </div>
+
+            <!-- Action Controls: QR Cards Modal & Workshop Stamp Passport -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <button onclick="openQrModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2C221E] hover:bg-[#43352F] text-[#FAF6EE] text-xs sm:text-sm font-semibold transition shadow-sm active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                    <span>Diorama QR Codes</span>
+                </button>
+                <button onclick="scrollToPassport()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E8DEC8] hover:bg-[#D3C1A3] text-[#2C221E] text-xs sm:text-sm font-semibold transition border border-[#C4B090] active:scale-95">
+                    <span>Stamps:</span>
+                    <span id="header-stamp-count" class="px-1.5 py-0.5 rounded-md bg-[#2C221E] text-[#FAF6EE] text-xs font-bold">1/4</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- QR Direct Entry / Guardian Selector Bar -->
+        <nav aria-label="Guardian Navigation" class="bg-[#F2EAD9] border-t border-[#E0D3BC] px-3 py-2.5">
+            <div class="max-w-5xl mx-auto flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <span class="hidden md:inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#6E594B] shrink-0 mr-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    QR Niche Switch:
+                </span>
+                <div class="grid grid-cols-4 gap-2 w-full">
+                    <button id="tab-kucing" onclick="selectGuardian('kucing')" class="guardian-tab flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition border-2">
+                        <span class="text-base">🐈</span>
+                        <span class="truncate">Kucing</span>
+                    </button>
+                    <button id="tab-ikan" onclick="selectGuardian('ikan')" class="guardian-tab flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition border-2">
+                        <span class="text-base">🐟</span>
+                        <span class="truncate">Ikan</span>
+                    </button>
+                    <button id="tab-tikus" onclick="selectGuardian('tikus')" class="guardian-tab flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition border-2">
+                        <span class="text-base">🐁</span>
+                        <span class="truncate">Tikus</span>
+                    </button>
+                    <button id="tab-kelabang" onclick="selectGuardian('kelabang')" class="guardian-tab flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition border-2">
+                        <span class="text-base">🐛</span>
+                        <span class="truncate">Kelabang</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Exhibition Showcase Area -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 sm:py-8 space-y-8">
+
+        <!-- Active Guardian Card -->
+        <section id="guardian-showcase" class="rounded-3xl overflow-hidden bg-white border-2 border-[#D3C1A3] craft-shadow pattern-transition">
+            
+            <!-- Procedural Batik Pattern Hero Banner -->
+            <div id="batik-banner" class="relative h-56 sm:h-64 w-full overflow-hidden flex items-center justify-between px-6 sm:px-10 transition-colors duration-500">
+                <!-- Dynamic SVG Batik Pattern Background Layer -->
+                <div id="batik-svg-bg" class="absolute inset-0 opacity-30 pointer-events-none"></div>
+                
+                <!-- Niche Tag & QR Hash Pill -->
+                <div class="relative z-10 max-w-md space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-sm text-white text-xs font-semibold tracking-wide">
+                        <span id="niche-code">NICHE 01 • #kucing</span>
+                        <span>•</span>
+                        <span id="landmark-badge">Kota Lama</span>
+                    </div>
+                    <h2 id="guardian-title" class="font-serif font-extrabold text-3xl sm:text-5xl text-white drop-shadow-sm">
+                        The Kucing
+                    </h2>
+                    <p id="batik-subtitle" class="text-sm sm:text-base font-medium text-white/95">
+                        Batik Parang Lereng • Guardian of History
+                    </p>
+                </div>
+
+                <!-- Illustrated Batik Animal Emblem Medallion -->
+                <div id="animal-emblem-container" class="relative z-10 w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-[#FAF6EE] border-4 border-white/80 shadow-xl flex items-center justify-center p-3 shrink-0 transform hover:scale-105 transition duration-300">
+                    <!-- Custom SVG Emblem injected via JS -->
+                </div>
+            </div>
+
+            <!-- Story Scroll & Interactive Pattern Explorer -->
+            <div class="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 bg-[#FAF6EE]">
+                
+                <!-- Left Column: Heritage Narrative Scroll (7 cols) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="relative p-6 rounded-2xl bg-[#F4ECDC] border border-[#D3C1A3] shadow-inner">
+                        <div class="flex items-center justify-between mb-3 border-b border-[#D3C1A3] pb-2">
+                            <span class="text-xs font-bold uppercase tracking-widest text-[#7A6252]">Diorama Story Scroll</span>
+                            <span id="philosophy-tag" class="text-xs font-serif italic font-semibold px-2.5 py-0.5 rounded-full bg-[#2C221E] text-[#FAF6EE]">Resilience &amp; Protection</span>
+                        </div>
+                        <p id="guardian-story" class="font-serif text-lg sm:text-xl leading-relaxed text-[#2C221E]">
+                            <!-- Story text injected via JS -->
+                        </p>
+                        <p id="guardian-explanation" class="mt-4 text-sm sm:text-base leading-relaxed text-[#4E3E35]">
+                            <!-- Cultural & philosophical explanation injected via JS -->
+                        </p>
+                    </div>
+
+                    <!-- Interactive Pattern Explorer Hotspots -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-serif font-bold text-lg text-[#2C221E] flex items-center gap-2">
+                                <span>🔍 Interactive Batik Motif Explorer</span>
+                            </h3>
+                            <span class="text-xs text-[#6E594B]">Tap elements to decode</span>
+                        </div>
+                        <div id="hotspot-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Hotspot toggles injected via JS -->
+                        </div>
+                        <div id="hotspot-detail-box" class="p-4 rounded-xl bg-white border border-[#D3C1A3] text-sm text-[#2C221E] shadow-sm">
+                            <!-- Hotspot active description injected via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Quick Scan QR & Next Guardian Connect (5 cols) -->
+                <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+                    <div class="p-5 rounded-2xl bg-white border-2 border-[#E0D3BC] flex flex-col items-center text-center space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#6E594B]">Direct Niche QR Link</span>
+                        <div id="active-guardian-qr" class="p-3 bg-white rounded-xl border border-[#E8DEC8] shadow-sm"></div>
+                        <p class="text-xs text-[#5C493E] max-w-xs">
+                            Scan with any phone camera to jump directly to <strong id="qr-hash-label" class="font-mono text-[#2C221E]">#kucing</strong>
+                        </p>
+                        <button onclick="copyCurrentGuardianLink()" id="copy-link-btn" class="w-full py-2 px-4 rounded-xl bg-[#F2EAD9] hover:bg-[#E8DEC8] text-[#2C221E] text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <span>Copy Direct Guardian URL</span>
+                        </button>
+                    </div>
+
+                    <!-- Connect to Next Animal Card -->
+                    <div class="p-5 rounded-2xl bg-[#2C221E] text-[#FAF6EE] space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] uppercase tracking-widest text-[#D3C1A3] font-bold">Continue Exhibition Trail</span>
+                            <span class="text-xs text-[#D3C1A3]">Next Stop →</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <h4 id="next-animal-name" class="font-serif font-bold text-lg">The Ikan • Tanjung Mas</h4>
+                                <p id="next-animal-batik" class="text-xs text-[#D3C1A3]">Batik Pesisiran / Mega Mendung</p>
+                            </div>
+                            <button id="next-animal-btn" onclick="goToNextGuardian()" class="px-4 py-2.5 rounded-xl bg-[#B8860B] hover:bg-[#9A7009] text-white text-xs font-bold shrink-0 transition shadow">
+                                Explore →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Workshop Activity: Digital Batik Stamp Passport & Mini Quiz -->
+        <section id="workshop-passport" class="rounded-3xl bg-[#F2EAD9] border-2 border-[#D3C1A3] p-6 sm:p-8 space-y-6 craft-shadow">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D3C1A3] pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-[#8B4513]">Interactive Workshop Activity</span>
+                    <h3 class="font-serif font-extrabold text-2xl text-[#2C221E]">Batik Setitik Guardian Passport</h3>
+                    <p class="text-sm text-[#5C493E]">Scan all 4 diorama QR codes or explore every guardian to collect your digital Batik Stamps.</p>
+                </div>
+                <div id="completion-badge" class="hidden items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-800 text-white text-xs font-bold shadow">
+                    <span>🏆 Master Guardian Explorer Unlocked!</span>
+                </div>
+            </div>
+
+            <!-- 4 Stamp Slots -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="stamp-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Quick Heritage Knowledge Check -->
+            <div class="p-5 rounded-2xl bg-[#FAF6EE] border border-[#D3C1A3] space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-serif font-bold text-base sm:text-lg text-[#2C221E]">🎯 Quick Match Challenge: Connect the Motif</h4>
+                    <button onclick="newQuizQuestion()" class="text-xs font-bold text-[#8B4513] hover:underline">New Question ↻</button>
+                </div>
+                <p id="quiz-question" class="text-sm sm:text-base font-medium text-[#2C221E]">
+                    Which guardian wears the diagonal <em>Parang Lereng</em> motif to watch over Kota Lama's historic European alleys?
+                </p>
+                <div id="quiz-options" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <!-- Quiz buttons populated by JS -->
+                </div>
+                <p id="quiz-feedback" class="text-xs font-semibold hidden"></p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#D3C1A3] bg-[#F2EAD9] py-6 px-4 text-center text-xs text-[#5C493E]">
+        <p class="font-serif font-bold text-sm text-[#2C221E] mb-1">Batik Setitik • The Four Guardians of Semarang</p>
+        <p>Interactive Diorama Companion • Scan any niche QR code (#kucing, #ikan, #tikus, #kelabang) to explore.</p>
+    </footer>
+
+    <!-- Printable QR Code Cards Modal for Physical Diorama Installation -->
+    <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-[#FAF6EE] border-2 border-[#2C221E] rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8">
+            <div class="flex items-center justify-between border-b border-[#D3C1A3] pb-4 no-print">
+                <div>
+                    <h3 class="font-serif font-extrabold text-2xl text-[#2C221E]">Diorama QR Code Cards</h3>
+                    <p class="text-xs sm:text-sm text-[#5C493E]">Print or attach these 4 QR codes to each niche of your physical Batik Setitik diorama.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-[#2C221E] hover:bg-[#43352F] text-white text-xs sm:text-sm font-bold transition">
+                        🖨️ Print QR Sheet
+                    </button>
+                    <button onclick="closeQrModal()" class="p-2 rounded-xl bg-[#E8DEC8] hover:bg-[#D3C1A3] text-[#2C221E] font-bold">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Printable Grid of 4 QR Codes -->
+            <div id="qr-print-area" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Cards injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast Message Box (Replaces alert()) -->
+    <div id="toast-box" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300 translate-y-4 opacity-0">
+        <div class="px-4 py-3 rounded-2xl bg-[#2C221E] text-[#FAF6EE] text-xs sm:text-sm font-semibold shadow-xl border border-[#B8860B] flex items-center gap-2">
+            <span id="toast-icon">✨</span>
+            <span id="toast-message">Link copied to clipboard!</span>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. GUARDIAN CULTURAL DATA & PROCEDURAL BATIK DEFINITIONS ---
+        const GUARDIANS = {
+            kucing: {
+                id: 'kucing',
+                niche: 'NICHE 01',
+                name: 'The Kucing',
+                landmark: 'Kota Lama',
+                batikName: 'Batik Parang Lereng',
+                role: 'Guardian of History',
+                philosophy: 'Resilience, Guardianship & Historic Continuity',
+                emoji: '🐈',
+                nextId: 'ikan',
+                palette: {
+                    primary: '#8B4513',
+                    secondary: '#D2691E',
+                    light: '#F5E6D3',
+                    accent: '#5C2C06'
+                },
+                story: '“Guards the stories of the old windows and Semarang’s historic European alleys.”',
+                explanation: 'In Javanese philosophy, the Parang pattern—with its dynamic diagonal blades and delicate cecekan (dot) fillings—was historically reserved for royalty to symbolize unbroken spirit and protection. Paired with the clever alley cat of Kota Lama, it watches over Semarang’s timeless colonial architecture.',
+                hotspots: [
+                    {
+                        title: 'Diagonal Parang Blades',
+                        detail: 'Represent continuous ocean waves and unyielding strength—symbolizing how Kota Lama’s heritage endures across centuries.'
+                    },
+                    {
+                        title: 'Cecekan Micro-Dots',
+                        detail: 'Fine hand-dotted wax clusters inside the diagonal bands that showcase the patience and precision of Semarang batik artisans.'
+                    }
+                ],
+                svgPattern: `
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="pat-kucing" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+                                <path d="M0 15 Q 15 0, 30 15 T 60 15" fill="none" stroke="#F5E6D3" stroke-width="5"/>
+                                <path d="M0 45 Q 15 30, 30 45 T 60 45" fill="none" stroke="#F5E6D3" stroke-width="5"/>
+                                <circle cx="15" cy="30" r="2.5" fill="#F5E6D3"/>
+                                <circle cx="45" cy="30" r="2.5" fill="#F5E6D3"/>
+                                <circle cx="30" cy="30" r="1.5" fill="#F5E6D3"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#pat-kucing)"/>
+                    </svg>
+                `,
+                emblemSvg: `
+                    <svg viewBox="0 0 120 120" class="w-full h-full">
+                        <circle cx="60" cy="60" r="54" fill="#F5E6D3" stroke="#8B4513" stroke-width="3"/>
+                        <!-- Stylized Cat Head with Parang Ear & Cheek Accents -->
+                        <path d="M32 46 L26 20 L48 34 Q60 30 72 34 L94 20 L88 46 Q96 62 88 78 Q76 94 60 94 Q44 94 32 78 Q24 62 32 46 Z" fill="#8B4513"/>
+                        <path d="M35 45 L31 27 L46 37 Z" fill="#D2691E"/>
+                        <path d="M85 45 L89 27 L74 37 Z" fill="#D2691E"/>
+                        <!-- Parang diagonal stripes on forehead -->
+                        <path d="M52 38 L58 46 M60 36 L66 44 M68 38 L72 45" stroke="#F5E6D3" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Eyes -->
+                        <ellipse cx="46" cy="58" rx="6" ry="7" fill="#FAF6EE"/>
+                        <ellipse cx="74" cy="58" rx="6" ry="7" fill="#FAF6EE"/>
+                        <circle cx="46" cy="58" r="3.5" fill="#2C221E"/>
+                        <circle cx="74" cy="58" r="3.5" fill="#2C221E"/>
+                        <!-- Nose & Whiskers -->
+                        <polygon points="56,69 64,69 60,74" fill="#F5E6D3"/>
+                        <path d="M52 78 Q60 83 68 78" fill="none" stroke="#F5E6D3" stroke-width="2.2" stroke-linecap="round"/>
+                        <path d="M22 64 L38 66 M22 72 L38 71 M98 64 L82 66 M98 72 L82 71" stroke="#5C2C06" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                `
+            },
+            ikan: {
+                id: 'ikan',
+                niche: 'NICHE 02',
+                name: 'The Ikan',
+                landmark: 'Tanjung Mas',
+                batikName: 'Batik Pesisiran / Mega Mendung',
+                role: 'Maritime Prosperity',
+                philosophy: 'Prosperity, Life-Giving Flow & Coastal Abundance',
+                emoji: '🐟',
+                nextId: 'tikus',
+                palette: {
+                    primary: '#1B5E63',
+                    secondary: '#4A9094',
+                    light: '#E0F2F1',
+                    accent: '#0E3A3E'
+                },
+                story: '“A prosperous symbol of marine richness and Semarang’s long coastal history.”',
+                explanation: 'Inspired by the northern maritime roots of Tanjung Mas port, the flowing coastal waves and Mega Mendung cloud gradients mirror the rhythms of the Java Sea. The fish gliding through these currents celebrates Semarang’s identity as a vibrant coastal trading hub.',
+                hotspots: [
+                    {
+                        title: 'Pesisiran Wave Layers',
+                        detail: 'Layered coastal curves symbolizing abundant harvests from the Java Sea and continuous maritime trade at Tanjung Mas.'
+                    },
+                    {
+                        title: 'Coastal Teal & Seafoam Palette',
+                        detail: 'Characteristic of northern Javanese coastal batik (Batik Pesisiran), reflecting openness to cross-cultural exchange.'
+                    }
+                ],
+                svgPattern: `
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="pat-ikan" width="80" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M0 20 Q 20 0, 40 20 T 80 20" fill="none" stroke="#E0F2F1" stroke-width="4"/>
+                                <path d="M0 32 Q 20 12, 40 32 T 80 32" fill="none" stroke="#E0F2F1" stroke-width="2.5"/>
+                                <circle cx="20" cy="18" r="2" fill="#E0F2F1"/>
+                                <circle cx="60" cy="18" r="2" fill="#E0F2F1"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#pat-ikan)"/>
+                    </svg>
+                `,
+                emblemSvg: `
+                    <svg viewBox="0 0 120 120" class="w-full h-full">
+                        <circle cx="60" cy="60" r="54" fill="#E0F2F1" stroke="#1B5E63" stroke-width="3"/>
+                        <!-- Stylized Coastal Fish with Wave Scales -->
+                        <path d="M22 60 Q45 30 80 42 L100 28 L94 60 L100 92 L80 78 Q45 90 22 60 Z" fill="#1B5E63"/>
+                        <path d="M52 34 L64 22 L72 37 Z" fill="#4A9094"/>
+                        <!-- Wave scale arcs -->
+                        <path d="M46 52 Q54 46 62 52 M56 60 Q64 54 72 60 M46 68 Q54 62 62 68" fill="none" stroke="#E0F2F1" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Gill & Eye -->
+                        <path d="M42 46 Q48 60 42 74" fill="none" stroke="#E0F2F1" stroke-width="2.5"/>
+                        <circle cx="34" cy="56" r="5" fill="#FAF6EE"/>
+                        <circle cx="33" cy="56" r="2.5" fill="#0E3A3E"/>
+                    </svg>
+                `
+            },
+            tikus: {
+                id: 'tikus',
+                niche: 'NICHE 03',
+                name: 'The Tikus',
+                landmark: 'Kampoeng Batik',
+                batikName: 'Batik Nitik / Tiga Negeri',
+                role: 'Artisan Patience',
+                philosophy: 'Meticulous Craftsmanship, Patience & Artisan Heritage',
+                emoji: '🐁',
+                nextId: 'kelabang',
+                palette: {
+                    primary: '#1A237E',
+                    secondary: '#3949AB',
+                    light: '#F5F5DC',
+                    accent: '#0D134D'
+                },
+                story: '“Discovers hidden local batik artisan workshops with meticulous care.”',
+                explanation: 'The intricate geometric grid formed by tiny hand-stamped dots (nitik) honors the deep artisan roots of Kampoeng Batik Semarang. The nimble mouse navigating narrow workshop alleys pays tribute to craftspeople who apply hot wax dot-by-dot using fine canting pens.',
+                hotspots: [
+                    {
+                        title: 'Nitik Geometric Dot-Grid',
+                        detail: 'Imitates traditional woven fabric textures using hundreds of tiny, uniform wax dots placed with extreme care.'
+                    },
+                    {
+                        title: 'Canting Precision Motif',
+                        detail: 'Honors the handheld copper spout tool (canting) used by Kampoeng Batik artisans to draw intricate heritage stories.'
+                    }
+                ],
+                svgPattern: `
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="pat-tikus" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <rect x="18" y="4" width="4" height="4" rx="1" fill="#F5F5DC"/>
+                                <rect x="18" y="32" width="4" height="4" rx="1" fill="#F5F5DC"/>
+                                <rect x="4" y="18" width="4" height="4" rx="1" fill="#F5F5DC"/>
+                                <rect x="32" y="18" width="4" height="4" rx="1" fill="#F5F5DC"/>
+                                <circle cx="20" cy="20" r="3.5" fill="none" stroke="#F5F5DC" stroke-width="2"/>
+                                <circle cx="10" cy="10" r="1.5" fill="#F5F5DC"/>
+                                <circle cx="30" cy="10" r="1.5" fill="#F5F5DC"/>
+                                <circle cx="10" cy="30" r="1.5" fill="#F5F5DC"/>
+                                <circle cx="30" cy="30" r="1.5" fill="#F5F5DC"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#pat-tikus)"/>
+                    </svg>
+                `,
+                emblemSvg: `
+                    <svg viewBox="0 0 120 120" class="w-full h-full">
+                        <circle cx="60" cy="60" r="54" fill="#F5F5DC" stroke="#1A237E" stroke-width="3"/>
+                        <!-- Round Ears -->
+                        <circle cx="34" cy="40" r="15" fill="#1A237E"/>
+                        <circle cx="86" cy="40" r="15" fill="#1A237E"/>
+                        <circle cx="34" cy="40" r="9" fill="#3949AB"/>
+                        <circle cx="86" cy="40" r="9" fill="#3949AB"/>
+                        <!-- Mouse Head -->
+                        <path d="M36 46 Q60 34 84 46 Q92 68 60 92 Q28 68 36 46 Z" fill="#1A237E"/>
+                        <!-- Nitik Diamond Forehead Dots -->
+                        <circle cx="60" cy="46" r="2" fill="#F5F5DC"/>
+                        <circle cx="55" cy="51" r="2" fill="#F5F5DC"/>
+                        <circle cx="65" cy="51" r="2" fill="#F5F5DC"/>
+                        <circle cx="60" cy="56" r="2" fill="#F5F5DC"/>
+                        <!-- Eyes & Pink Nose -->
+                        <circle cx="46" cy="64" r="4.5" fill="#FAF6EE"/>
+                        <circle cx="74" cy="64" r="4.5" fill="#FAF6EE"/>
+                        <circle cx="46" cy="64" r="2.2" fill="#0D134D"/>
+                        <circle cx="74" cy="64" r="2.2" fill="#0D134D"/>
+                        <circle cx="60" cy="86" r="4.5" fill="#E5989B"/>
+                        <path d="M24 76 L42 78 M24 83 L42 82 M96 76 L78 78 M96 83 L78 82" stroke="#1A237E" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                `
+            },
+            kelabang: {
+                id: 'kelabang',
+                niche: 'NICHE 04',
+                name: 'The Kelabang',
+                landmark: 'Tugu Muda',
+                batikName: 'Batik Sekar Jagad',
+                role: 'Resilience & Unity',
+                philosophy: 'Unity in Diversity, Strength & Historical Endurance',
+                emoji: '🐛',
+                nextId: 'kucing',
+                palette: {
+                    primary: '#6A1B29',
+                    secondary: '#B8860B',
+                    light: '#FDF5E6',
+                    accent: '#420F18'
+                },
+                story: '“Represents resilience and the dynamic spirit of historical endurance.”',
+                explanation: 'Translating to “Flowers of the World,” Batik Sekar Jagad weaves distinct geometric patches and floral clusters into one harmonious tapestry. Anchored by the heroic history of Tugu Muda, the armored centipede embodies collective strength and Semarang’s multicultural unity.',
+                hotspots: [
+                    {
+                        title: 'Sekar Jagad Patchwork Cells',
+                        detail: 'Interlocking island-like geometric motifs symbolizing beauty in diversity and harmony among Semarang’s communities.'
+                    },
+                    {
+                        title: 'Tugu Muda Spirit of Endurance',
+                        detail: 'Reflects the courage and resilience commemorated by Semarang’s iconic monument through bold burgundy and gold contrasts.'
+                    }
+                ],
+                svgPattern: `
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="pat-kelabang" width="60" height="60" patternUnits="userSpaceOnUse">
+                                <polygon points="30,4 56,30 30,56 4,30" fill="none" stroke="#FDF5E6" stroke-width="2.5"/>
+                                <circle cx="30" cy="30" r="8" fill="none" stroke="#FDF5E6" stroke-width="2"/>
+                                <circle cx="30" cy="30" r="2.5" fill="#FDF5E6"/>
+                                <circle cx="12" cy="12" r="2" fill="#FDF5E6"/>
+                                <circle cx="48" cy="12" r="2" fill="#FDF5E6"/>
+                                <circle cx="12" cy="48" r="2" fill="#FDF5E6"/>
+                                <circle cx="48" cy="48" r="2" fill="#FDF5E6"/>
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#pat-kelabang)"/>
+                    </svg>
+                `,
+                emblemSvg: `
+                    <svg viewBox="0 0 120 120" class="w-full h-full">
+                        <circle cx="60" cy="60" r="54" fill="#FDF5E6" stroke="#6A1B29" stroke-width="3"/>
+                        <!-- Antennae -->
+                        <path d="M48 34 Q36 20 26 24 M72 34 Q84 20 94 24" fill="none" stroke="#6A1B29" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Segmented Guardian Centipede Shield -->
+                        <rect x="38" y="34" width="44" height="22" rx="11" fill="#6A1B29"/>
+                        <rect x="34" y="54" width="52" height="20" rx="10" fill="#8B2638"/>
+                        <rect x="38" y="72" width="44" height="18" rx="9" fill="#6A1B29"/>
+                        <!-- Sekar Jagad Gold Floral Geometry -->
+                        <polygon points="60,57 67,64 60,71 53,64" fill="none" stroke="#FDF5E6" stroke-width="2"/>
+                        <circle cx="60" cy="64" r="2" fill="#FDF5E6"/>
+                        <!-- Eyes & Mandibles -->
+                        <circle cx="48" cy="44" r="4" fill="#FDF5E6"/>
+                        <circle cx="72" cy="44" r="4" fill="#FDF5E6"/>
+                        <path d="M52 32 Q60 26 68 32" fill="none" stroke="#B8860B" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Side Legs -->
+                        <path d="M34 60 L22 56 M86 60 L98 56 M38 78 L24 76 M82 78 L96 76" stroke="#6A1B29" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                `
+            }
+        };
+
+        // --- 2. APPLICATION STATE ---
+        let currentGuardianId = 'kucing';
+        let visitedSet = new Set(['kucing']);
+        let activeHotspotIndex = 0;
+        let currentQuizIndex = 0;
+
+        const QUIZ_BANK = [
+            {
+                question: "Which guardian wears the diagonal Parang Lereng motif to watch over Kota Lama's historic European alleys?",
+                answer: "kucing"
+            },
+            {
+                question: "Which animal represents maritime prosperity at Tanjung Mas port with coastal Pesisiran wave patterns?",
+                answer: "ikan"
+            },
+            {
+                question: "Which guardian celebrates artisan patience in Kampoeng Batik through fine Nitik dot-grid patterns?",
+                answer: "tikus"
+            },
+            {
+                question: "Which guardian wears Batik Sekar Jagad ('Flowers of the World') to honor historical resilience at Tugu Muda?",
+                answer: "kelabang"
+            }
+        ];
+
+        // --- 3. CORE RENDERING & NAVIGATION ---
+        function selectGuardian(id, updateHash = true) {
+            if (!GUARDIANS[id]) id = 'kucing';
+            currentGuardianId = id;
+            activeHotspotIndex = 0;
+            visitedSet.add(id);
+
+            if (updateHash) {
+                history.replaceState(null, '', '#' + id);
+            }
+
+            const g = GUARDIANS[id];
+            const nextG = GUARDIANS[g.nextId];
+
+            // Update Navigation Tabs
+            document.querySelectorAll('.guardian-tab').forEach(btn => {
+                btn.className = 'guardian-tab flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-2 rounded-xl text-xs sm:text-sm font-bold transition border-2 bg-white/70 border-[#D3C1A3] text-[#4E3E35] hover:bg-white';
+            });
+            const activeTab = document.getElementById('tab-' + id);
+            if (activeTab) {
+                activeTab.style.backgroundColor = g.palette.primary;
+                activeTab.style.borderColor = g.palette.primary;
+                activeTab.style.color = '#FFFFFF';
+            }
+
+            // Update Hero Banner Colors & Procedural Batik SVG
+            const banner = document.getElementById('batik-banner');
+            banner.style.backgroundColor = g.palette.primary;
+            document.getElementById('batik-svg-bg').innerHTML = g.svgPattern;
+
+            // Update Texts & Emblem
+            document.getElementById('niche-code').textContent = `${g.niche} • #${g.id}`;
+            document.getElementById('landmark-badge').textContent = g.landmark;
+            document.getElementById('guardian-title').textContent = `${g.name} • ${g.landmark}`;
+            document.getElementById('batik-subtitle').textContent = `${g.batikName} — ${g.role}`;
+            document.getElementById('animal-emblem-container').innerHTML = g.emblemSvg;
+
+            document.getElementById('philosophy-tag').textContent = g.philosophy;
+            document.getElementById('philosophy-tag').style.backgroundColor = g.palette.primary;
+            document.getElementById('guardian-story').textContent = g.story;
+            document.getElementById('guardian-explanation').textContent = g.explanation;
+
+            // Render Interactive Pattern Explorer Hotspots
+            renderHotspots(g);
+
+            // Render Direct QR Code for Active Guardian
+            renderSingleQr('active-guardian-qr', g.id, 132, g.palette.accent);
+            document.getElementById('qr-hash-label').textContent = `#${g.id}`;
+
+            // Update Next Stop Card
+            document.getElementById('next-animal-name').textContent = `${nextG.name} • ${nextG.landmark}`;
+            document.getElementById('next-animal-batik').textContent = nextG.batikName;
+
+            // Update Passport Stamps
+            renderPassportStamps();
+        }
+
+        function renderHotspots(guardian) {
+            const btnContainer = document.getElementById('hotspot-buttons');
+            const detailBox = document.getElementById('hotspot-detail-box');
+            btnContainer.innerHTML = '';
+
+            guardian.hotspots.forEach((spot, idx) => {
+                const isSelected = idx === activeHotspotIndex;
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-xl text-left text-xs sm:text-sm font-bold border-2 transition flex items-center justify-between ${
+                    isSelected
+                        ? 'text-white shadow-sm'
+                        : 'bg-white text-[#2C221E] border-[#D3C1A3] hover:bg-[#F4ECDC]'
+                }`;
+                if (isSelected) {
+                    btn.style.backgroundColor = guardian.palette.primary;
+                    btn.style.borderColor = guardian.palette.primary;
+                }
+                btn.innerHTML = `<span>${spot.title}</span><span>${isSelected ? '●' : '○'}</span>`;
+                btn.onclick = () => {
+                    activeHotspotIndex = idx;
+                    renderHotspots(guardian);
+                };
+                btnContainer.appendChild(btn);
+            });
+
+            const activeSpot = guardian.hotspots[activeHotspotIndex];
+            detailBox.innerHTML = `
+                <p class="font-bold text-xs uppercase tracking-wider mb-1" style="color: ${guardian.palette.primary}">${activeSpot.title}</p>
+                <p class="leading-relaxed text-[#3E312B]">${activeSpot.detail}</p>
+            `;
+        }
+
+        function goToNextGuardian() {
+            const nextId = GUARDIANS[currentGuardianId].nextId;
+            selectGuardian(nextId);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 4. QR CODE GENERATION & PRINT MODAL ---
+        function getGuardianUrl(id) {
+            const baseUrl = window.location.href.split('#')[0];
+            return `${baseUrl}#${id}`;
+        }
+
+        function renderSingleQr(containerId, guardianId, size = 128, darkColor = '#2C221E') {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            el.innerHTML = '';
+            try {
+                new QRCode(el, {
+                    text: getGuardianUrl(guardianId),
+                    width: size,
+                    height: size,
+                    colorDark: darkColor,
+                    colorLight: '#FFFFFF',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } catch (e) {
+                el.innerHTML = `<div class="p-4 text-xs font-mono border border-dashed">QR: #${guardianId}</div>`;
+            }
+        }
+
+        function openQrModal() {
+            const modal = document.getElementById('qr-modal');
+            const printArea = document.getElementById('qr-print-area');
+            printArea.innerHTML = '';
+
+            Object.values(GUARDIANS).forEach(g => {
+                const card = document.createElement('div');
+                card.className = 'p-5 rounded-2xl bg-white border-2 border-[#2C221E] flex items-center gap-4 shadow-sm';
+                card.innerHTML = `
+                    <div id="modal-qr-${g.id}" class="p-2 bg-white border border-[#D3C1A3] rounded-xl shrink-0"></div>
+                    <div class="space-y-1">
+                        <span class="inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-[#E8DEC8] text-[#2C221E]">${g.niche}</span>
+                        <h4 class="font-serif font-extrabold text-lg text-[#2C221E]">${g.name} • ${g.landmark}</h4>
+                        <p class="text-xs font-semibold" style="color: ${g.palette.primary}">${g.batikName}</p>
+                        <p class="text-[11px] text-[#5C493E] pt-1">Scan to explore story &amp; collect stamp</p>
+                    </div>
+                `;
+                printArea.appendChild(card);
+                renderSingleQr(`modal-qr-${g.id}`, g.id, 104, g.palette.accent);
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qr-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyCurrentGuardianLink() {
+            const url = getGuardianUrl(currentGuardianId);
+            const tempInput = document.createElement('input');
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast(`Copied QR link for ${GUARDIANS[currentGuardianId].name} (#${currentGuardianId})`);
+        }
+
+        // --- 5. WORKSHOP STAMP PASSPORT & MINI QUIZ ---
+        function renderPassportStamps() {
+            const grid = document.getElementById('stamp-grid');
+            grid.innerHTML = '';
+
+            Object.values(GUARDIANS).forEach(g => {
+                const isCollected = visitedSet.has(g.id);
+                const slot = document.createElement('button');
+                slot.onclick = () => {
+                    selectGuardian(g.id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                slot.className = `p-4 rounded-2xl border-2 text-center transition flex flex-col items-center justify-center gap-2 ${
+                    isCollected
+                        ? 'bg-white border-[#2C221E] shadow-sm'
+                        : 'bg-[#FAF6EE]/60 border-dashed border-[#B8A68B] opacity-70 hover:opacity-100'
+                }`;
+
+                slot.innerHTML = `
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                        isCollected ? 'bg-[#E8DEC8]' : 'bg-[#E8DEC8]/50 grayscale'
+                    }">
+                        ${g.emoji}
+                    </div>
+                    <div>
+                        <p class="font-serif font-bold text-sm text-[#2C221E]">${g.name}</p>
+                        <p class="text-[11px] font-semibold ${isCollected ? 'text-emerald-800' : 'text-[#7A6252]'}">
+                            ${isCollected ? '✓ Stamp Collected' : 'Tap or Scan QR'}
+                        </p>
+                    </div>
+                `;
+                grid.appendChild(slot);
+            });
+
+            document.getElementById('header-stamp-count').textContent = `${visitedSet.size}/4`;
+            const badge = document.getElementById('completion-badge');
+            if (visitedSet.size === 4) {
+                badge.classList.remove('hidden');
+                badge.classList.add('inline-flex');
+            }
+        }
+
+        function renderQuiz() {
+            const q = QUIZ_BANK[currentQuizIndex];
+            document.getElementById('quiz-question').textContent = q.question;
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            const optionsEl = document.getElementById('quiz-options');
+            optionsEl.innerHTML = '';
+
+            Object.values(GUARDIANS).forEach(g => {
+                const btn = document.createElement('button');
+                btn.className = 'py-2.5 px-3 rounded-xl bg-white hover:bg-[#E8DEC8] border border-[#D3C1A3] text-xs sm:text-sm font-bold text-[#2C221E] transition flex items-center justify-center gap-1.5';
+                btn.innerHTML = `<span>${g.emoji}</span><span>${g.name}</span>`;
+                btn.onclick = () => {
+                    feedback.classList.remove('hidden');
+                    if (g.id === q.answer) {
+                        feedback.className = 'text-xs sm:text-sm font-bold text-emerald-800 pt-1';
+                        feedback.textContent = `✨ Correct! ${g.name} of ${g.landmark} wears ${g.batikName}.`;
+                        visitedSet.add(g.id);
+                        renderPassportStamps();
+                    } else {
+                        feedback.className = 'text-xs sm:text-sm font-bold text-amber-800 pt-1';
+                        feedback.textContent = `Not quite! Hint: Check ${GUARDIANS[q.answer].landmark} (${GUARDIANS[q.answer].batikName}).`;
+                    }
+                };
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function newQuizQuestion() {
+            currentQuizIndex = (currentQuizIndex + 1) % QUIZ_BANK.length;
+            renderQuiz();
+        }
+
+        function scrollToPassport() {
+            document.getElementById('workshop-passport').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-box');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('hidden', 'translate-y-4', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 2600);
+        }
+
+        // --- 6. HASH ROUTING INITIALIZATION ---
+        function handleHashChange() {
+            const hash = window.location.hash.replace('#', '').toLowerCase();
+            if (GUARDIANS[hash]) {
+                selectGuardian(hash, false);
+            } else {
+                selectGuardian('kucing', false);
+            }
+        }
+
+        window.addEventListener('hashchange', handleHashChange);
+        window.addEventListener('DOMContentLoaded', () => {
+            handleHashChange();
+            renderQuiz();
+        });
+    </script>
+</body>
+</html>
